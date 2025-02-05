@@ -4,26 +4,14 @@ on:
   release:
     types: [created]
 
-jobs:
-  build:
-    name: Build Release Binaries
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - target: x64-linux
-            os: linux
-            arch: x64
-          - target: arm64-darwin
-            os: darwin
-            arch: arm64
-          - target: x64-darwin
-            os: darwin
-            arch: x64
-          - target: x64-windows
-            os: windows
-            arch: x64
+permissions:
+  contents: write
 
+jobs:
+  build-and-release:
+    name: Build and Release Binaries
+    runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -35,25 +23,65 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build binary
+      - name: Build all binaries
         run: bun run build
-        env:
-          TARGET_OS: ${{ matrix.os }}
-          TARGET_ARCH: ${{ matrix.arch }}
 
-      - name: Upload Release Asset
+      - name: Upload Linux x64 Binary
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./open-api-pruner-${{ matrix.os }}-${{ matrix.arch }}
-          asset_name: open-api-pruner-${{ matrix.os }}-${{ matrix.arch }}
+          asset_path: ./open-api-pruner-linux-x64
+          asset_name: open-api-pruner-linux-x64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux ARM64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./open-api-pruner-linux-arm64
+          asset_name: open-api-pruner-linux-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Darwin x64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./open-api-pruner-darwin-x64
+          asset_name: open-api-pruner-darwin-x64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Darwin ARM64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./open-api-pruner-darwin-arm64
+          asset_name: open-api-pruner-darwin-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows x64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./open-api-pruner-windows-x64.exe
+          asset_name: open-api-pruner-windows-x64.exe
           asset_content_type: application/octet-stream
 
   update-readme:
-    needs: build
+    needs: build-and-release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
