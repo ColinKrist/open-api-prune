@@ -1,0 +1,23 @@
+{
+    "name": "open-api-prune",
+    "version": "1.0.0",
+    "module": "src/index.ts",
+    "type": "module",
+    "bin": {
+        "openapi-prune": "./src/index.ts"
+    },
+    "scripts": {
+        "start": "bun run src/index.ts",
+        "build": "bun run build.ts",
+        "prune": "bun run src/index.ts prune"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "@types/node": "^22.13.1",
+        "prompts": "^2.4.2",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "commander": "^13.1.0"
+    }
+}
