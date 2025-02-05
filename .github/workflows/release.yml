@@ -1,0 +1,71 @@
+name: Release Build
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x64-linux
+            os: linux
+            arch: x64
+          - target: arm64-darwin
+            os: darwin
+            arch: arm64
+          - target: x64-darwin
+            os: darwin
+            arch: x64
+          - target: x64-windows
+            os: windows
+            arch: x64
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build binary
+        run: bun run build
+        env:
+          TARGET_OS: ${{ matrix.os }}
+          TARGET_ARCH: ${{ matrix.arch }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./open-api-pruner-${{ matrix.os }}-${{ matrix.arch }}
+          asset_name: open-api-pruner-${{ matrix.os }}-${{ matrix.arch }}
+          asset_content_type: application/octet-stream
+
+  update-readme:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update README with new version
+        run: |
+          VERSION=${{ github.event.release.tag_name }}
+          sed -i "s/open-api-prune@[0-9.]\+/open-api-prune@${VERSION#v}/" README.md
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "docs: update version in README to ${{ github.event.release.tag_name }}"
+          title: "docs: update version in README to ${{ github.event.release.tag_name }}"
+          body: "Updates the version number in README.md to match the new release"
+          branch: "docs/update-version-${{ github.event.release.tag_name }}" 
