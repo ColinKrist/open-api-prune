@@ -11,10 +11,12 @@ jobs:
   build-and-release:
     name: Build and Release Binaries
     runs-on: ubuntu-latest
-    
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -22,6 +24,10 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Build all binaries
         run: bun run build
@@ -87,13 +93,14 @@ jobs:
 
       - name: Update README with new version
         run: |
-          VERSION=${{ github.event.release.tag_name }}
+          VERSION="${{ needs.build-and-release.outputs.version }}"
+          echo "Updating version to: $VERSION"
           sed -i "s/open-api-prune@[0-9.]\+/open-api-prune@${VERSION#v}/" README.md
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "docs: update version in README to ${{ github.event.release.tag_name }}"
-          title: "docs: update version in README to ${{ github.event.release.tag_name }}"
+          commit-message: "docs: update version in README to ${{ needs.build-and-release.outputs.version }}"
+          title: "docs: update version in README to ${{ needs.build-and-release.outputs.version }}"
           body: "Updates the version number in README.md to match the new release"
-          branch: "docs/update-version-${{ github.event.release.tag_name }}" 
+          branch: "docs/update-version-${{ needs.build-and-release.outputs.version }}"
